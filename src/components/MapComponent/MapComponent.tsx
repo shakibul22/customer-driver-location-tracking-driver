@@ -9,7 +9,7 @@ import {
   calculateRoute,
   getDistanceFromRoute,
   getSpeedFromRoute,
-  getTimeFromRoute
+  getTimeFromRoute,
 } from "@/utils";
 import { useGoogleMapsLoader } from "@/utils/googleApiLoader";
 import { DirectionsRenderer, GoogleMap, Marker } from "@react-google-maps/api";
@@ -48,12 +48,12 @@ const MapComponent = ({
   //   map.fitBounds(bounds);
   // };
 
-  useEffect(() => {
-    if (customerLocation) {
-      calculateRoute(isLoaded, driverLocation, customerLocation, setDirections);
-    }
-    driverLocationChanged(driverLocation);
-  }, [driverLocation, customerLocation]);
+  // useEffect(() => {
+  //   if (customerLocation) {
+  //     calculateRoute(isLoaded, driverLocation, customerLocation, setDirections);
+  //   }
+  //   // driverLocationChanged(driverLocation);
+  // }, [driverLocation, customerLocation]);
 
   const distance = getDistanceFromRoute(directions);
   const time = getTimeFromRoute(directions);
@@ -62,32 +62,42 @@ const MapComponent = ({
 
   // automatic driver location changed
 
-  // useEffect(() => {
-  //   if (!navigator.geolocation) {
-  //     console.error("Geolocation is not supported by this browser.");
-  //     alert("Geolocation is not supported by this browser.");
-  //     return;
-  //   }
-  
-  //   const watchId = navigator.geolocation.watchPosition(
-  //     (position) => {
-  //       const { latitude, longitude } = position.coords;
-  //       setDriverLocation({ lat: latitude, lng: longitude });
-  //       driverLocationChanged({ lat: latitude, lng: longitude }); // Notify parent component
-  //     },
-  //     (error) => {
-  //       console.error("Error getting location:", error);
-  //     },
-  //     {
-  //       enableHighAccuracy: true, // Use GPS for better accuracy
-  //       timeout: 10000,
-  //       maximumAge: 0,
-  //     }
-  //   );
-  
-  //   return () => navigator.geolocation.clearWatch(watchId); // Cleanup function
-  // }, []);
-  
+  useEffect(() => {
+    if (!navigator.geolocation) {
+      console.error("Geolocation is not supported by this browser.");
+      alert("Geolocation is not supported by this browser.");
+      return;
+    }
+
+    const watchId = navigator.geolocation.watchPosition(
+      (position) => {
+        const { latitude, longitude } = position.coords;
+        setDriverLocation({ lat: latitude, lng: longitude });
+        driverLocationChanged({ lat: latitude, lng: longitude }); // Notify parent component
+        // Delay route calculation (Debounce effect)
+        setTimeout(() => {
+          if (customerLocation) {
+            calculateRoute(
+              isLoaded,
+              { lat: latitude, lng: longitude },
+              customerLocation,
+              setDirections
+            );
+          }
+        }, 1000); // 1-second delay to prevent excessive API calls
+      },
+      (error) => {
+        console.error("Error getting location:", error);
+      },
+      {
+        enableHighAccuracy: true, // Use GPS for better accuracy
+        timeout: 10000,
+        maximumAge: 0,
+      }
+    );
+
+    return () => navigator.geolocation.clearWatch(watchId); // Cleanup function
+  }, []);
 
   return (
     <div className="bg-slate-200">
